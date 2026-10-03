@@ -1,7 +1,9 @@
 ---
 title: "Homework_2"
-format: html
 editor: visual
+format:
+  html:
+    embed-resources: true
 ---
 
 ```{r}
