@@ -62,13 +62,13 @@ momentum_walk <- function(n, p) {
     location <- c(0, 0)
     movement <- sample(c(-2, -1, 1, 2), size = 1)
 
-    #cat("step 1\n")
+    
     location <- walk(location, movement)
-    #print(location)
+    
 
     if (n > 1) {
       for (i in 2:n) {
-        #cat("step", i, "\n")
+       
 
         if (runif(1) < p) {
           location <- walk(location, movement)
@@ -77,7 +77,7 @@ momentum_walk <- function(n, p) {
           location <- walk(location, movement)
         }
 
-        #print(location)
+       
       }
     }
 
@@ -347,7 +347,6 @@ hist(youtube_new$log_comment_count,
 
 ```{r}
 #problem 3_(c) Fitting linear regression models
-#Now we do the linear regression model first consider view count
 
 outcomes <- c(
   "log_view_count",
@@ -356,7 +355,7 @@ outcomes <- c(
   "log_comment_count"
 )
 
-seven <- c(
+characteristics <- c(
   "funny",
   "show_product_quickly",
   "patriotic",
@@ -368,27 +367,22 @@ seven <- c(
 
 results <- data.frame()
 
-# Fit 28 separate models, each adjusting for year.
 for (outcome in outcomes) {
-  for (seven in seven) {
+  for (characteristic in characteristics) {
 
-    # Construct the regression formula.
     model_formula <- as.formula(
-      paste(outcome, "~", seven, "+ year")
+      paste(outcome, "~", characteristic, "+ year")
     )
 
-    # Fit the model.
     fit <- lm(model_formula, data = youtube_new)
 
-    # Extract the coefficient table.
     coef_table <- summary(fit)$coefficients
 
-    # Store the characteristic's coefficient and p-value.
     results <- rbind(
       results,
       data.frame(
         outcome = outcome,
-        seven=seven,
+        characteristic=characteristic,
         estimate = coef_table[2, "Estimate"],
         p_value = coef_table[2, "Pr(>|t|)"]
       )
@@ -396,15 +390,41 @@ for (outcome in outcomes) {
   }
 }
 
-# Report the coefficient and p-value for all 28 models.
 print(results, row.names = FALSE)
+
+#Which commercial characteristics have a statistically significant association with each engagement outcome at the 𝛼 =0.05 significance level?
+
+significant <- subset(results,p_values<0.05)
+print(significant)
+
+#For each statistically significant association, state whether the association is positive or negative.
+
+significant$direction <- ifelse(
+  significant$estimate > 0,
+  "Positive",
+  "Negative"
+)
+print(significant)
+
+#Identify which commercial characteristic has the largest positive estimated association with view counts.
+
+view_results <- subset(
+  results,
+  outcome == "log_view_count" & estimate > 0
+)
+
+view_results[
+  which.max(view_results$estimate),
+  c("characteristic", "estimate", "p_value")
+]
+print(view_results)
 ```
 
 ```{r}
 #problem3_(d)
 
 #accorting to the (c) we choosr "danger" as X
-
+# 
 d_data <- youtube_new[
   complete.cases(
     youtube_new$log_view_count,
@@ -413,24 +433,18 @@ d_data <- youtube_new[
   ),
 ]
 
-# Response variable
-y <- d_data$log_view_count
 
-# Construct the design matrix:
-# intercept + danger + year
+y <- d_data$log_view_count
 X <- cbind(
   1,
   d_data$danger,
   d_data$year
 )
 
-# Calculate beta_hat using the matrix formula
 beta_hat <- solve(t(X) %*% X) %*% t(X) %*% y
 
 beta_hat
 
-
-# Fit the same model using lm()
 fit_d <- lm(
   log_view_count ~ danger + year,
   data = d_data
